@@ -61,6 +61,13 @@ public class TrackerController {
             logger.info("Running tracker analysis for {} to {}{}",
                     fromDate, toDate, (file != null && !file.isEmpty()) ? " using uploaded file" : "");
 
+            if (file != null && !file.isEmpty() && file.getSize() > 10L * 1024 * 1024) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("status", "error");
+                error.put("message", "Uploaded Excel file exceeds 10MB limit. Please upload a smaller file.");
+                return ResponseEntity.status(413).body(error);
+            }
+
             // Initialize services
             UserReadService userReadService = new UserReadService();
             UsageReadService usageReadService = new UsageReadService();

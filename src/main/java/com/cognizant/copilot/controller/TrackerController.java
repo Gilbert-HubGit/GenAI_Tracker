@@ -55,7 +55,7 @@ public class TrackerController {
                 toDate = LocalDate.now();
             }
             if (fromDate == null) {
-                fromDate = toDate.minusDays(4);
+                fromDate = toDate.minusDays(2);
             }
 
             logger.info("Running tracker analysis for {} to {}{}",

@@ -54,10 +54,7 @@ public class ReportGenerationService {
             }
 
             generateTeamBenefitChart(result, chartDir);
-            generateTeamEffortComparisonChart(result, chartDir);
-            generateResourceBenefitChart(result, chartDir);
             generateBenefitTrendLineChart(result, chartDir);
-            generateTeamWiseBenefitTrendLineChart(result, chartDir);
 
             logger.info("Dashboard charts generated successfully in: {}", chartOutputDir);
             printChartGenerationSummary();
@@ -374,9 +371,6 @@ public class ReportGenerationService {
         System.out.println("DASHBOARD CHARTS GENERATED");
         System.out.println("======================================");
         System.out.println("1. " + chartOutputDir + "/team-benefit-chart.png");
-        System.out.println("2. " + chartOutputDir + "/team-effort-comparison-chart.png");
-        System.out.println("3. " + chartOutputDir + "/resource-benefit-chart.png");
-        System.out.println("4. " + chartOutputDir + "/benefit-trend-line-chart.png");
-        System.out.println("5. " + chartOutputDir + "/team-wise-benefit-trend-line-chart.png");
+        System.out.println("2. " + chartOutputDir + "/benefit-trend-line-chart.png");
     }
 }

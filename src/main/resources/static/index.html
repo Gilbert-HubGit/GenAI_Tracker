@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenAI Copilot Tracker Monitor - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.98) 100%);
+            padding: 40px 50px;
+            border-radius: 20px;
+            margin-bottom: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        h1 {
+            color: #1a237e;
+            margin-bottom: 8px;
+            font-size: 2.5em;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1em;
+            font-weight: 500;
+        }
+
+        .controls {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.98) 100%);
+            padding: 30px 40px;
+            border-radius: 20px;
+            margin-bottom: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        .control-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        label {
+            font-weight: 600;
+            color: #1a237e;
+            font-size: 0.95em;
+        }
+
+        input[type="date"] {
+            padding: 12px 16px;
+            border: 2px solid #e8eaf6;
+            border-radius: 12px;
+            font-size: 0.95em;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: #1a237e;
+        }
+
+        input[type="date"]:focus {
+            outline: none;
+            border-color: #3949ab;
+            box-shadow: 0 0 0 3px rgba(57, 73, 171, 0.1);
+            transform: scale(1.02);
+        }
+
+        button {
+            padding: 12px 35px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.95em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+            letter-spacing: 0.3px;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        button:active {
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+            color: white;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-radius: 20px;
+            margin-bottom: 40px;
+            border: 2px dashed rgba(255,255,255,0.3);
+        }
+
+        .loading.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .spinner {
+            border: 5px solid rgba(255, 255, 255, 0.2);
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f5f7fa 100%);
+            padding: 35px 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.8);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .metric-card:hover::before {
+            left: 100%;
+        }
+
+        .metric-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+
+        .metric-card.updated {
+            border-left: 6px solid #4caf50;
+            background: linear-gradient(135deg, #ffffff 0%, #f1f8e9 100%);
+        }
+
+        .metric-card.pending {
+            border-left: 6px solid #ff9800;
+            background: linear-gradient(135deg, #ffffff 0%, #fff3e0 100%);
+        }
+
+        .metric-card.defaulter {
+            border-left: 6px solid #f44336;
+            background: linear-gradient(135deg, #ffffff 0%, #ffebee 100%);
+        }
+
+        .metric-value {
+            font-size: 3.5em;
+            font-weight: 800;
+            color: #667eea;
+            margin: 15px 0;
+            letter-spacing: -1px;
+        }
+
+        .metric-card.updated .metric-value {
+            color: #4caf50;
+            text-shadow: 0 2px 10px rgba(76, 175, 80, 0.2);
+        }
+
+        .metric-card.pending .metric-value {
+            color: #ff9800;
+            text-shadow: 0 2px 10px rgba(255, 152, 0, 0.2);
+        }
+
+        .metric-card.defaulter .metric-value {
+            color: #f44336;
+            text-shadow: 0 2px 10px rgba(244, 67, 54, 0.2);
+        }
+
+        .metric-label {
+            color: #555;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.8em;
+            letter-spacing: 1px;
+            word-spacing: 2px;
+        }
+
+        .charts {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .chart-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f5f7fa 100%);
+            padding: 0;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255,255,255,0.8);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .chart-card:hover {
+            transform: translateY(-12px) scale(1.02);
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.25);
+        }
+
+        .chart-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px 25px;
+            color: white;
+            font-weight: 700;
+            font-size: 0.95em;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .chart-content {
+            padding: 20px;
+            position: relative;
+            height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #ffffff 0%, #f5f7fa 100%);
+            overflow: hidden;
+        }
+
+        .chart-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 12px;
+            filter: brightness(0.95);
+        }
+
+        .chart-card:hover img {
+            transform: scale(1.08) rotate(1deg);
+            filter: brightness(1.1) drop-shadow(0 10px 30px rgba(102, 126, 234, 0.4));
+        }
+
+        .chart-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1em;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .chart-card:hover .chart-overlay {
+            opacity: 1;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.9) 100%);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 25px;
+            padding: 30px;
+            max-width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 50px 100px rgba(0, 0, 0, 0.4);
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .modal-header h2 {
+            color: #1a237e;
+            font-size: 1.8em;
+        }
+
+        .close-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5em;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            transform: rotate(90deg) scale(1.1);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .modal-body img {
+            width: 100%;
+            max-height: 600px;
+            object-fit: contain;
+            border-radius: 15px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .error {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe082 100%);
+            border: 2px solid #ffc107;
+            color: #856404;
+            padding: 20px 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: none;
+            box-shadow: 0 10px 25px rgba(255, 193, 7, 0.2);
+            font-weight: 600;
+            animation: slideIn 0.3s ease;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        .success {
+            background: linear-gradient(135deg, #d4edda 0%, #a5d6a7 100%);
+            border: 2px solid #28a745;
+            color: #155724;
+            padding: 20px 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: none;
+            box-shadow: 0 10px 25px rgba(40, 167, 69, 0.2);
+            font-weight: 600;
+            animation: slideIn 0.3s ease;
+        }
+
+        .success.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .no-data {
+            background: linear-gradient(135deg, #ffffff 0%, #f5f7fa 100%);
+            padding: 60px 40px;
+            text-align: center;
+            border-radius: 20px;
+            color: #999;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+            border: 2px dashed rgba(0,0,0,0.1);
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        footer {
+            text-align: center;
+            color: rgba(255,255,255,0.8);
+            margin-top: 50px;
+            padding: 30px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        @media (max-width: 1024px) {
+            .charts {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+            }
+
+            .control-group {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .charts {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-content {
+                height: 250px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            header {
+                padding: 25px 30px;
+            }
+
+            .metric-value {
+                font-size: 2.5em;
+            }
+
+            .metric-card {
+                padding: 25px 20px;
+            }
+
+            .modal-content {
+                max-width: 95%;
+                max-height: 80vh;
+                padding: 20px;
+            }
+
+            .modal-header h2 {
+                font-size: 1.3em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>✨ GenAI Copilot Tracker Monitor</h1>
+            <p class="subtitle">Real-time compliance & productivity intelligence dashboard</p>
+        </header>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="fromDate">📅 From Date:</label>
+                <input type="date" id="fromDate">
+            </div>
+            <div class="control-group">
+                <label for="toDate">📅 To Date:</label>
+                <input type="date" id="toDate">
+            </div>
+            <button onclick="analyzeTracker()">🔍 Analyze Tracker</button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processing tracker data...</p>
+        </div>
+
+        <div class="error" id="errorMessage"></div>
+        <div class="success" id="successMessage"></div>
+
+        <div id="metrics" class="metrics"></div>
+
+        <div id="charts" class="charts"></div>
+
+        <div id="noData" class="no-data">
+            <p>Click "Analyze Tracker" to view dashboard data</p>
+        </div>
+
+        <!-- Chart Modal -->
+        <div id="chartModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle">Chart Details</h2>
+                    <button class="close-btn" onclick="closeModal()">✕</button>
+                </div>
+                <div class="modal-body">
+                    <img id="modalImage" src="" alt="Chart">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Cognizant GenAI Copilot Tracker Monitor | Powered by Spring Boot</p>
+    </footer>
+
+    <script>
+        // Modal Functions
+        function openModal(chartName, title) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalImage').src = `/api/tracker/charts/${chartName}`;
+            document.getElementById('chartModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('chartModal').classList.remove('active');
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('chartModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Set default dates (last 5 days)
+        function setDefaultDates() {
+            const toDate = new Date();
+            const fromDate = new Date(toDate);
+            fromDate.setDate(fromDate.getDate() - 4);
+
+            document.getElementById('fromDate').valueAsDate = fromDate;
+            document.getElementById('toDate').valueAsDate = toDate;
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('active');
+            setTimeout(() => errorDiv.classList.remove('active'), 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.classList.add('active');
+            setTimeout(() => successDiv.classList.remove('active'), 5000);
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString();
+        }
+
+        async function analyzeTracker() {
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
+
+            if (!fromDate || !toDate) {
+                showError('Please select both from and to dates');
+                return;
+            }
+
+            const loading = document.getElementById('loading');
+            loading.classList.add('active');
+
+            try {
+                const response = await fetch(`/api/tracker/analyze?fromDate=${fromDate}&toDate=${toDate}`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Analysis failed');
+                }
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    showSuccess(`Analysis completed for ${formatDate(result.fromDate)} to ${formatDate(result.toDate)}`);
+                    await displayDashboard();
+                } else {
+                    showError(result.message || 'Analysis failed');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+                console.error('Error:', error);
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+
+        async function displayDashboard() {
+            try {
+                const response = await fetch('/api/tracker/dashboard');
+
+                if (!response.ok) {
+                    document.getElementById('noData').style.display = 'block';
+                    document.getElementById('metrics').innerHTML = '';
+                    document.getElementById('charts').innerHTML = '';
+                    return;
+                }
+
+                const data = await response.json();
+
+                // Display metrics with icons
+                const metricsHtml = `
+                    <div class="metric-card updated">
+                        <div class="metric-icon">✅</div>
+                        <div class="metric-value">${data.updatedUsers.length}</div>
+                        <div class="metric-label">Updated Users</div>
+                    </div>
+                    <div class="metric-card pending">
+                        <div class="metric-icon">⏳</div>
+                        <div class="metric-value">${data.pendingUsers.length}</div>
+                        <div class="metric-label">Pending Users</div>
+                    </div>
+                    <div class="metric-card defaulter">
+                        <div class="metric-icon">❌</div>
+                        <div class="metric-value">${data.fiveDayDefaulters.length}</div>
+                        <div class="metric-label">5-Day Defaulters</div>
+                    </div>
+                `;
+
+                document.getElementById('metrics').innerHTML = metricsHtml;
+                document.getElementById('noData').style.display = 'none';
+
+                // Display charts with interactive hover effects
+                const charts = [
+                    { name: 'team-benefit-chart', title: '📊 Team Benefit Analysis' },
+                    { name: 'team-effort-comparison-chart', title: '⚖️ Team Effort Comparison' },
+                    { name: 'resource-benefit-chart', title: '👥 Resource Benefit Distribution' },
+                    { name: 'benefit-trend-line-chart', title: '📈 Benefit Trend Analysis' },
+                    { name: 'team-wise-benefit-trend-line-chart', title: '🎯 Team-wise Benefit Trends' }
+                ];
+
+                let chartsHtml = '';
+                charts.forEach(chart => {
+                    chartsHtml += `
+                        <div class="chart-card" onclick="openModal('${chart.name}', '${chart.title}')">
+                            <div class="chart-header">${chart.title}</div>
+                            <div class="chart-content">
+                                <img src="/api/tracker/charts/${chart.name}" alt="${chart.name}" onerror="this.style.display='none'">
+                                <div class="chart-overlay">🔍 Click to View Full Size</div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('charts').innerHTML = chartsHtml;
+
+            } catch (error) {
+                showError('Error loading dashboard: ' + error.message);
+                console.error('Error:', error);
+            }
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            setDefaultDates();
+        });
+    </script>
+</body>
+</html>

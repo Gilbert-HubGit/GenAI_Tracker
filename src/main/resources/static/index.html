@@ -549,6 +549,10 @@
                 <label for="toDate">📅 To Date:</label>
                 <input type="date" id="toDate">
             </div>
+            <div class="control-group">
+                <label for="trackerFile">📁 Excel File:</label>
+                <input type="file" id="trackerFile" accept=".xlsx,.xls" />
+            </div>
             <button onclick="analyzeTracker()">🔍 Analyze Tracker</button>
         </div>
 
@@ -644,6 +648,8 @@
         async function analyzeTracker() {
             const fromDate = document.getElementById('fromDate').value;
             const toDate = document.getElementById('toDate').value;
+            const fileInput = document.getElementById('trackerFile');
+            const file = fileInput && fileInput.files ? fileInput.files[0] : null;
 
             if (!fromDate || !toDate) {
                 showError('Please select both from and to dates');
@@ -654,12 +660,22 @@
             loading.classList.add('active');
 
             try {
-                const response = await fetch(`/api/tracker/analyze?fromDate=${fromDate}&toDate=${toDate}`, {
-                    method: 'POST'
+                const formData = new FormData();
+                formData.append('fromDate', fromDate);
+                formData.append('toDate', toDate);
+
+                if (file) {
+                    formData.append('file', file);
+                }
+
+                const response = await fetch('/api/tracker/analyze', {
+                    method: 'POST',
+                    body: formData
                 });
 
                 if (!response.ok) {
-                    throw new Error('Analysis failed');
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Analysis failed');
                 }
 
                 const result = await response.json();

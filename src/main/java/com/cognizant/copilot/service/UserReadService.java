@@ -37,11 +37,16 @@ public class UserReadService {
      * Read user list from Excel file
      */
     public List<UserInfo> readUserList() throws Exception {
+        return readUserList(new java.io.File(excelPath));
+    }
+
+    public List<UserInfo> readUserList(java.io.File excelFile) throws Exception {
         List<UserInfo> users = new ArrayList<>();
+        String effectivePath = excelFile != null ? excelFile.getAbsolutePath() : excelPath;
 
-        logger.info("Reading user list from: {}", excelPath);
+        logger.info("Reading user list from: {}", effectivePath);
 
-        try (FileInputStream fis = new FileInputStream(excelPath);
+        try (FileInputStream fis = new FileInputStream(excelFile);
              Workbook workbook = new XSSFWorkbook(fis)) {
 
             Sheet sheet = workbook.getSheet(userListSheet);

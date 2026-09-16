@@ -18,8 +18,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -39,10 +43,11 @@ public class TrackerController {
     /**
      * Analyze tracker data for a given date range
      */
-    @PostMapping("/analyze")
+    @PostMapping(value = "/analyze", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE, MediaType.APPLICATION_FORM_URLENCODED_VALUE})
     public ResponseEntity<Map<String, Object>> analyzeTracker(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(value = "file", required = false) MultipartFile file) {
 
         try {
             // Default to last 5 days if not provided
@@ -53,7 +58,8 @@ public class TrackerController {
                 fromDate = toDate.minusDays(4);
             }
 
-            logger.info("Running tracker analysis for {} to {}", fromDate, toDate);
+            logger.info("Running tracker analysis for {} to {}{}",
+                    fromDate, toDate, (file != null && !file.isEmpty()) ? " using uploaded file" : "");
 
             // Initialize services
             UserReadService userReadService = new UserReadService();
@@ -65,9 +71,22 @@ public class TrackerController {
                     config.getInt("chart.resource.top.count", 15)
             );
 
-            // Read data
-            List<UserInfo> users = userReadService.readUserList();
-            List<UsageEntry> usageEntries = usageReadService.readUsageEntries();
+            List<UserInfo> users;
+            List<UsageEntry> usageEntries;
+
+            if (file != null && !file.isEmpty()) {
+                Path tempFile = Files.createTempFile("copilot-tracker-upload-", ".xlsx");
+                try {
+                    Files.copy(file.getInputStream(), tempFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    users = userReadService.readUserList(tempFile.toFile());
+                    usageEntries = usageReadService.readUsageEntries(tempFile.toFile());
+                } finally {
+                    tempFile.toFile().delete();
+                }
+            } else {
+                users = userReadService.readUserList();
+                usageEntries = usageReadService.readUsageEntries();
+            }
 
             // Analyze
             TrackerResult result = analysisService.analyzeTracker(users, usageEntries, fromDate, toDate);
@@ -87,6 +106,7 @@ public class TrackerController {
             response.put("updatedCount", result.updatedUsers.size());
             response.put("pendingCount", result.pendingUsers.size());
             response.put("defaultersCount", result.fiveDayDefaulters.size());
+            response.put("fileUploadUsed", file != null && !file.isEmpty());
 
             return ResponseEntity.ok(response);
 

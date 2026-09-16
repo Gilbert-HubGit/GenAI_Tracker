@@ -38,11 +38,16 @@ public class UsageReadService {
      * Read usage entries from Excel file
      */
     public List<UsageEntry> readUsageEntries() throws Exception {
+        return readUsageEntries(new java.io.File(excelPath));
+    }
+
+    public List<UsageEntry> readUsageEntries(java.io.File excelFile) throws Exception {
         List<UsageEntry> entries = new ArrayList<>();
+        String effectivePath = excelFile != null ? excelFile.getAbsolutePath() : excelPath;
 
-        logger.info("Reading usage entries from: {}", excelPath);
+        logger.info("Reading usage entries from: {}", effectivePath);
 
-        try (FileInputStream fis = new FileInputStream(excelPath);
+        try (FileInputStream fis = new FileInputStream(excelFile);
              Workbook workbook = new XSSFWorkbook(fis)) {
 
             Sheet sheet = workbook.getSheet(usageSheet);
